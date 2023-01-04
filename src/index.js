@@ -8,6 +8,7 @@
  const padContainer = document.querySelector('.js-pad-container');
  const difficultyContainer = document.querySelector('.js-difficulty');
 
+
 /**
  * VARIABLES
  */
@@ -18,20 +19,6 @@ let roundCount = 0; // track the number of rounds that have been played so far
 let playerWins = 0
 let computerWins = 0;
 
-/**
- *
- * The `pads` array contains an array of pad objects.
- *
- * Each pad object contains the data related to a pad: `color`, `sound`, and `selector`.
- * - The `color` property is set to the color of the pad (e.g., "red", "blue").
- * - The `selector` property is set to the DOM selector for the pad.
- * - The `sound` property is set to an audio file using the Audio() constructor.
- *
- * Audio file for the green pad: "../assets/simon-says-sound-2.mp3"
- * Audio file for the blue pad: "../assets/simon-says-sound-3.mp3"
- * Audio file for the yellow pad: "../assets/simon-says-sound-4.mp3"
- *
- */
 
  const pads = [
   {
@@ -67,23 +54,8 @@ startButton.addEventListener("click", startButtonHandler);
  * EVENT HANDLERS
  */
 
-/**
- * Called when the start button is clicked.
- *
- * 1. Call setLevel() to set the level of the game
- *
- * 2. Increment the roundCount from 0 to 1
- *
- * 3. Hide the start button by adding the `.hidden` class to the start button
- *
- * 4. Unhide the status element, which displays the status messages, by removing the `.hidden` class
- *
- * 5. Call `playComputerTurn()` to start the game with the computer going first.
- *
- */
 function startButtonHandler() {
-  let level = Number(document.querySelector('input[name="difficulty"]:checked').value);
-  maxRoundCount = setLevel(level);
+  setLevel();
   roundCount++;
   startButton.classList.add('hidden');
   statusSpan.classList.remove('hidden');
@@ -92,29 +64,12 @@ function startButtonHandler() {
   return { startButton, statusSpan };
 }
 
-/**
- * Called when one of the pads is clicked.
- *
- * 1. `const { color } = event.target.dataset;` extracts the value of `data-color`
- * attribute on the element that was clicked and stores it in the `color` variable
- *
- * 2. `if (!color) return;` exits the function if the `color` variable is falsy
- *
- * 3. Use the `.find()` method to retrieve the pad from the `pads` array and store it
- * in a variable called `pad`
- *
- * 4. Play the sound for the pad by calling `pad.sound.play()`
- *
- * 5. Call `checkPress(color)` to verify the player's selection
- *
- * 6. Return the `color` variable as the output
- */
 function padHandler(event) {
   const { color } = event.target.dataset;
   if (!color) return;
   let pad = pads.find(pad => pad.color == color);
   pad.sound.currentTime = 0;
-  pad.sound.play()
+  pad.sound.play();
   checkPress(color);
   return color;
 }
@@ -144,8 +99,10 @@ function padHandler(event) {
  * setLevel(8) //> returns "Please enter level 1, 2, 3, or 4";
  *
  */
-function setLevel(level = 1) {
+function setLevel(level) {
+  level ??= Number(document.querySelector('input[name="difficulty"]:checked').value);
   let rounds = [8,8,14,20,31]
+  maxRoundCount = rounds[level];
   if (level > 4) {
     return "Please enter level 1, 2, 3, or 4";
   } else {
@@ -254,7 +211,7 @@ function activatePads(sequence) {
   setText(heading, `Round ${roundCount} of ${maxRoundCount}`);
   playerSequence = [];
 
-  computerSequence = [...Array(roundCount)].map(pad => getRandomItem(['red', 'green', 'blue', 'yellow']));
+  computerSequence.push(getRandomItem(['red', 'green', 'blue', 'yellow']));
   activatePads(computerSequence);
 
   setTimeout(() => playHumanTurn(roundCount), roundCount * 600 + 500); // 5
@@ -270,7 +227,9 @@ function activatePads(sequence) {
 function playHumanTurn() {
   padContainer.classList.remove('unclickable');
   let remainingPresses = computerSequence.length - playerSequence.length;
-  if (remainingPresses == 1) {
+  if (playerSequence.length == 0) {
+    setText(statusSpan, "Player's turn...");
+  } else if (remainingPresses == 1) {
     setText(statusSpan, `1 press remaining`);
   } else {
     setText(statusSpan, `${remainingPresses} presses remaining`);
@@ -350,6 +309,7 @@ function checkRound() {
  * 3. Reset `roundCount` to an empty array
  */
 function resetGame(text) {
+  alert(text);
   computerSequence = [];
   playerSequence = [];
   roundCount = 0;
@@ -358,6 +318,7 @@ function resetGame(text) {
   } else {
     computerWins++;
   }
+  setText(heading, "Simon Says");
   setText(heading, `${text}\nYou ${playerWins} vs CPU ${computerWins}`);
   setText(startButton, "PLAY AGAIN")
   statusSpan.classList.add("hidden");
